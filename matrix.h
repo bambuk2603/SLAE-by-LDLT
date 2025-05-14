@@ -21,5 +21,7 @@ Matrix read_mtx(const std::string& filename);
 CSRMatrix convert_to_csr(const Matrix& mat);
 bool is_symmetric(const std::string& filename, const CSRMatrix& mat);
 bool is_positive_definite(const CSRMatrix& mat);
+std::vector<double> generate_b(const CSRMatrix& A, double n);
+std::vector<double> solve_ldlt(const CSRMatrix& A, const std::vector<double>& b);
 
 #endif
