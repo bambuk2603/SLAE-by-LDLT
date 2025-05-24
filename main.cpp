@@ -7,6 +7,10 @@
 #include "matrix.h"
 
 int main() {
+    //omp_set_num_threads(4);  // Фиксируем число потоков
+    //omp_set_dynamic(0);      // Запрещаем автоматическое изменение числа потоков
+
+
     std::string filename = "bcsstk16.mtx";
     /*
     не симметричная      tols90.mtx

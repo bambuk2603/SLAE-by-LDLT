@@ -207,6 +207,8 @@ bool is_symmetric(const std::string& filename, const CSRMatrix& mat) {
 bool is_positive_definite(const CSRMatrix& mat){
     std::vector<double> D(mat.n_rows, 0.0);  // Диагональ D
     std::vector<std::vector<double>> L(mat.n_rows, std::vector<double>(mat.n_rows, 0.0));
+    bool is_pos_def = true;
+    #pragma omp parallel for
     for (int i = 0; i < mat.n_rows; ++i) {
         // Вычисляем L[i][k] и D[i]
         double sum = 0.0;
@@ -219,16 +221,17 @@ bool is_positive_definite(const CSRMatrix& mat){
             }
         }
         // Вычисляем сумму для D[i]
+        #pragma omp parallel for reduction(+:sum)
         for (int j = 0; j < i; ++j) {
             sum += L[i][j] * L[i][j] * D[j];
         }
         D[i] = A_ii - sum;
         // Если D[i] <= 0 → матрица не положительно определена
-        if (D[i] > 1e-9) {
-            return true;
+        if (D[i] < 1e-9) {
+            is_pos_def = false;
         }
-            return false;
     }
+    return is_pos_def;
 }
 
 std::vector<double> generate_b(const CSRMatrix& A, double n) {
