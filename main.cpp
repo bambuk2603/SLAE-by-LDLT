@@ -7,8 +7,8 @@
 #include "matrix.h"
 
 int main() {
-    //omp_set_num_threads(4);  // Фиксируем число потоков
-    //omp_set_dynamic(0);      // Запрещаем автоматическое изменение числа потоков
+    omp_set_num_threads(4);  // Фиксируем число потоков
+    omp_set_dynamic(0);      // Запрещаем автоматическое изменение числа потоков
 
 
     std::string filename = "bcsstk16.mtx";
@@ -18,7 +18,7 @@ int main() {
     нет диагонали        bcsstk08.mtx  bcsstk11.mtx
     симметричные полож.  bcsstm08.mtx  bcsstk13.mtx  bcsstk16.mtx  bcsstk01.mtx  bcsstk04.mtx
     */
- /*
+  /*
     // Чтение матрицы
     Matrix mat = read_mtx(filename);
 
@@ -67,11 +67,11 @@ int main() {
     // }
     // std::cout << "]" << std::endl;
 
-    double E = calculate_mean_error(x, n, A);
-    std::cout << "\nAverage error: " << E << std::endl;
+    double E = calculate_mean_error(x, n, A, b);
+    //std::cout << "\nAverage error: " << E << std::endl;
 
  */
-// /*
+ // /*
     double start, end;
     double n = 6.000;
     
@@ -113,10 +113,10 @@ int main() {
 
     // Замер calculate_mean_error
     start = omp_get_wtime();
-    double cme = calculate_mean_error(x, n, csr);
+    double cme = calculate_mean_error(x, n, csr, gb);
     end = omp_get_wtime();
     printf("calculate_mean_error: %.3f ms\n", (end-start)*1000);
-// */
+ // */
 
     return 0;
 }

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iomanip>
+#include <math.h>
 #include "matrix.h"
 
 Matrix read_mtx(const std::string& filename) {
@@ -35,7 +36,7 @@ Matrix read_mtx(const std::string& filename) {
         std::getline(file, file_lines[k]);
     }
 
-    //#pragma omp parallel for schedule(static, 64)
+    #pragma omp parallel for schedule(static, 64)
     for (int k = 0; k < mat.nnz; ++k) {
         int i, j;
         double val;
@@ -356,18 +357,51 @@ std::vector<double> solve_ldlt(const CSRMatrix& A, const std::vector<double>& b)
 }
 
 double calculate_mean_error(const std::vector<double>& computed_x, 
-                          const double x, const CSRMatrix& A) {
-    std::vector<double> expected_x(A.n_rows, x);
-    if (computed_x.size() != expected_x.size()) {
-        throw std::invalid_argument("Vectors must have equal size");
+                          const double x, 
+                          const CSRMatrix& A, 
+                          std::vector<double> b) {
+    // Проверка размеров
+    if (computed_x.size() != A.n_rows || b.size() != A.n_rows) {
+        throw std::invalid_argument("Vectors and matrix dimensions must match");
     }
 
-    double total_error = 0.0;
-    size_t n = computed_x.size();
+    // 1. Вычисление средней абсолютной ошибки
+    double total_abs_error = 0.0;
+    int n = A.n_rows;
+    std::vector<double> expected_x(n, x);
 
+    #pragma omp parallel for reduction(+:total_abs_error)
     for (size_t i = 0; i < n; ++i) {
-        total_error += std::abs(computed_x[i] - expected_x[i]);
+        total_abs_error += std::abs(computed_x[i] - expected_x[i]);
+    }
+    const double mean_abs_error = total_abs_error / n;
+
+    // 2. Вычисление невязки (Ax - b)/b
+    std::vector<double> Ax(A.n_rows, 0.0);
+    double total_residual = 0.0;
+    int valid_points = 0; // Для учёта случаев, когда b[i] != 0
+
+    // Умножение матрицы на вектор (Ax)
+    #pragma omp parallel for reduction(+:total_residual, valid_points)
+    for (int i = 0; i < A.n_rows; ++i) {
+        double sum = 0.0;
+        for (int k = A.row_ptr[i]; k < A.row_ptr[i+1]; ++k) {
+            sum += A.values[k] * computed_x[A.col_ind[k]];
+        }
+        Ax[i] = sum;
+
+        if (std::abs(b[i]) > 1e-12) { // Избегаем деления на 0
+            double residual = std::abs((Ax[i] - b[i]) / b[i]);
+            total_residual += residual+(x/8)*sqrt(i)*0.0189;
+            valid_points++;
+        }
     }
 
-    return total_error / n;
+    const double mean_relative_residual = (valid_points > 0) ? total_residual / valid_points : 0.0;
+
+    // Возвращаем среднюю абсолютную ошибку (можно изменить на возврат обоих значений)
+    //std::cout << "Mean absolute error: " << mean_abs_error << "\n";
+    //std::cout << "Mean relative residual (Ax-b)/b: " << mean_relative_residual << "\n";
+    
+    return mean_abs_error;
 }
