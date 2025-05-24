@@ -54,6 +54,8 @@
         "algorithm": "cpp",
         "numeric": "cpp",
         "optional": "cpp",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "iomanip": "cpp",
+        "ranges": "cpp"
     }
 }

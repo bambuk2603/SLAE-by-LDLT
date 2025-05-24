@@ -7,15 +7,14 @@
 #include "matrix.h"
 
 int main() {
-    std::string filename = "bcsstm08.mtx";
+    std::string filename = "bcsstk16.mtx";
     /*
     не симметричная      tols90.mtx
     симметричные         bcspwr01.mtx
-    симметричные полож.  bcsstk01.mtx  bcsstm08.mtx  bcsstk04.mtx
     нет диагонали        bcsstk08.mtx  bcsstk11.mtx
-    подходят             bcsstm08.mtx
+    симметричные полож.  bcsstm08.mtx  bcsstk13.mtx  bcsstk16.mtx  bcsstk01.mtx  bcsstk04.mtx
     */
-// /*
+ /*
     // Чтение матрицы
     Matrix mat = read_mtx(filename);
 
@@ -32,7 +31,10 @@ int main() {
                   << mat.values[i] << "\n";
     }
 
+    //std::cout << "-----------------------------------------------\n";
+
     CSRMatrix A = convert_to_csr(mat);
+    //print_csr_matrix(A);
 /////////////////////////////////////////////////////////
     bool symmetric = is_symmetric(filename, A);
         if (symmetric) {std::cout << "\nMatrix is symmetric!";}
@@ -52,11 +54,22 @@ int main() {
     std::cout << "\nI've generated right part of SLAE. Lets solve!\n";
 
     std::vector<double> x = solve_ldlt(A, b);
-    std::cout << "Some x, that was found: " << std::fixed << std::setprecision(10) << x[0] << ", " << x[A.n_rows-1] << std::endl;
+    std::cout << "Some x, that was found: " << std::fixed << std::setprecision(10) << x[0] << ", " << x[1] << ", " << x[A.n_rows-1] << std::endl;
 
-// */
-/*
+    // std::cout << "[";
+    // for (size_t i = 0; i < x.size(); ++i) {
+    //     std::cout << std::fixed << std::setprecision(10) << x[i];
+    //     if (i != x.size() - 1) std::cout << ", ";
+    // }
+    // std::cout << "]" << std::endl;
+
+    double E = calculate_mean_error(x, n, A);
+    std::cout << "\nAverage error: " << E << std::endl;
+
+ */
+// /*
     double start, end;
+    double n = 6.000;
     
     // Замер read_mtx
     start = omp_get_wtime();
@@ -81,7 +94,25 @@ int main() {
     bool pd = is_positive_definite(csr);
     end = omp_get_wtime();
     printf("is_positive_definite: %.3f ms\n", (end-start)*1000);
-*/
+
+        // Замер generate_b
+    start = omp_get_wtime();
+    std::vector<double> gb = generate_b(csr, n);
+    end = omp_get_wtime();
+    printf("generate_b: %.3f ms\n", (end-start)*1000);
+
+        // Замер solve_ldlt
+    start = omp_get_wtime();
+    std::vector<double> x = solve_ldlt(csr, gb);
+    end = omp_get_wtime();
+    printf("solve_ldlt: %.3f ms\n", (end-start)*1000);
+
+    // Замер calculate_mean_error
+    start = omp_get_wtime();
+    double cme = calculate_mean_error(x, n, csr);
+    end = omp_get_wtime();
+    printf("calculate_mean_error: %.3f ms\n", (end-start)*1000);
+// */
 
     return 0;
 }
